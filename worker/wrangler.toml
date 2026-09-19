@@ -1,0 +1,7 @@
+name = "jev-techstack-classifier"
+main = "src/index.ts"
+compatibility_date = "2026-09-01"
+
+[vars]
+# Origins allowed to call the Worker from a browser (comma-separated).
+ALLOWED_ORIGINS = "https://swap-mitra.github.io,http://localhost:8000"

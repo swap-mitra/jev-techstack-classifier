@@ -1,41 +1,36 @@
 # Jev tech stack classifier
 
+**Live:** https://swap-mitra.github.io/jev-techstack-classifier/ (bring your own
+[TypeSafe API key](https://console.typesafe.ai/))
+
 Describe a project in plain English and [TypeSafe Jev](https://docs.typesafe.ai) ranks
 technology options for each stack layer (frontend, backend, database, hosting, mobile)
 by probability. It is a classifier, not a generator: it only ranks the options listed in
-`LAYERS` in `stack.py`.
+`stack_config.json`.
 
 When the description leaves platform, scale, or data type unclear, the app offers
 clarifying questions. Answering one appends it to the description and re-runs.
 
-## Setup
+## How it's hosted
+
+```
+GitHub Pages (docs/index.html)  ──POST + X-TypeSafe-Key──▶  Cloudflare Worker (worker/)  ──▶  api.typesafe.ai
+```
+
+The TypeSafe API rejects browser requests from other sites, so the static page can't
+call it directly. The Worker forwards each request using the visitor's own key, which the
+page keeps in their browser only if "remember" is ticked. The Worker has no key of its
+own and stores nothing.
+
+## Run locally
 
 ```sh
 pip install -r requirements.txt
-echo TYPESAFE_API_KEY=your-key > .env   # get a key at https://console.typesafe.ai/
+echo TYPESAFE_API_KEY=your-key > .env
+python app.py   # http://localhost:8000, serves docs/index.html plus the same API
 ```
 
-## Run
-
-Web UI:
-
-```sh
-python app.py   # http://localhost:8000
-```
-
-Visitors can paste their own key into the **JEV API KEY** field. It is stored only in
-their browser (untick "remember" to keep it for the session) and sent to this server
-with each request, which falls back to the server's `TYPESAFE_API_KEY` when none is given.
-
-## Deploy
-
-```sh
-HOST=0.0.0.0 PORT=8000 python app.py
-```
-
-- Leave `TYPESAFE_API_KEY` unset (and don't ship `.env`) on a public deployment,
-  otherwise every visitor runs on your key.
-- Serve it behind HTTPS, since visitors' keys travel in a request header.
+Locally the server falls back to `TYPESAFE_API_KEY` when the page sends no key.
 
 CLI:
 
@@ -44,7 +39,21 @@ python stack.py "Internal HR leave tracker for 50 employees"
 python stack.py --demo   # live self-check against the API
 ```
 
+## Deploy
+
+Pages serves `docs/` from `main`. To deploy the Worker:
+
+```sh
+cd worker
+npm install
+npx wrangler login
+npx wrangler deploy
+```
+
+Put the printed `*.workers.dev` URL into `WORKER_URL` in `docs/index.html`. Allowed
+browser origins are set by `ALLOWED_ORIGINS` in `worker/wrangler.toml`.
+
 ## Customise
 
-- Add or change technologies: edit `LAYERS` in `stack.py`.
-- Add clarifying questions: edit `CLARIFY` in `stack.py`.
+- Technologies and clarifying questions: edit `stack_config.json` (used by both the
+  Python app and the Worker).

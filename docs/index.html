@@ -1044,6 +1044,10 @@ document.getElementById("dock-host").textContent = location.host;
 let sessionRunCount = 0;
 
 const $ = id => document.getElementById(id);
+// On GitHub Pages there is no server, so requests go to the Cloudflare Worker (worker/).
+// Locally, app.py serves this page and the API on the same origin.
+const WORKER_URL = "https://jev-techstack-classifier.WORKERS_SUBDOMAIN.workers.dev";
+const API_BASE = location.hostname.endsWith("github.io") ? WORKER_URL : "";
 
 // Key storage is a convenience: storage can be blocked, so every access is guarded.
 const KEY_STORE = "typesafe-api-key";
@@ -1159,7 +1163,7 @@ async function runClassification() {
   const startTime = performance.now();
 
   try {
-    const res = await fetch("/api/recommend", {
+    const res = await fetch(`${API_BASE}/api/recommend`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...($("api-key").value.trim() && { "X-TypeSafe-Key": $("api-key").value.trim() }) },
       body: JSON.stringify({ requirements })

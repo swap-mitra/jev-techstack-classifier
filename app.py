@@ -13,7 +13,7 @@ from pathlib import Path
 
 from stack import recommend
 
-HTML_PATH = Path(__file__).with_name("index.html")
+HTML_PATH = Path(__file__).parent / "docs" / "index.html"
 MAX_CHARS = 5000
 MAX_KEY_CHARS = 512
 
