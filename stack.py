@@ -68,24 +68,28 @@ LOW_CONFIDENCE = 0.3  # docs' example threshold, not validated on this domain
 
 # Jev can't write questions, so clarifications are canned: a Noul checks whether the
 # requirements already cover the topic, and the UI asks only about uncovered ones.
+# Thresholds: ask when the "covered" probability is below it. Tuned on 15 hand-labelled
+# prompts (all separated cleanly); retune on real traffic.
 CLARIFY = {
     "platform": {
-        "check": "Do the requirements say which platforms the software must run on (web browser, iOS, Android, desktop, or backend/API only)?",
+        "check": "Can you tell what kind of product this is: a website or web app (including portals, storefronts, dashboards), a phone app, a desktop app, or a backend API? Answer yes if the product type is stated or clearly implied; answer no if it just says 'app', 'software', 'tool' or 'platform' without saying where it runs.",
+        "threshold": 0.7,
         "ask": "Where will people use it?",
         "options": ["Web browser", "iOS and Android apps", "Web and mobile", "Desktop", "API only, no UI"],
     },
     "scale": {
         "check": "Do the requirements indicate the expected number of users or traffic volume?",
+        "threshold": 0.5,
         "ask": "How many users?",
         "options": ["Under 100 internal users", "Thousands of users", "Millions of users"],
     },
     "data": {
-        "check": "Do the requirements describe what kind of data the software stores (e.g. transactional records, documents, metrics over time, analytics)?",
+        "check": "Can you infer the main kind of data this software would store, such as orders, bookings, user profiles, patient or business records, posts and photos, sensor readings, or analytics events? Answer no only if the purpose is too vague to guess the data.",
+        "threshold": 0.7,
         "ask": "What data does it mainly store?",
         "options": ["Structured business records", "Flexible documents", "Time-series or sensor data", "Large analytics datasets"],
     },
 }
-CLARIFY_THRESHOLD = 0.5  # ask when "already covered" is less likely than not
 
 
 def recommend(requirements: str) -> dict:
@@ -108,7 +112,7 @@ def recommend(requirements: str) -> dict:
     clarify = [
         {"id": k, "ask": c["ask"], "options": c["options"]}
         for k, c in CLARIFY.items()
-        if response.nouls[f"clarify_{k}"].noul < CLARIFY_THRESHOLD
+        if response.nouls[f"clarify_{k}"].noul < c["threshold"]
     ]
     usage = response.usage
     return {
