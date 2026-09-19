@@ -23,6 +23,8 @@ Frontend, backend, database, hosting and mobile, each option with its own percen
 [Customise](#customising-the-options) ·
 [Limits](#known-limits)
 
+<img src="docs/screenshot.png" alt="Jev Tech Stack Classifier ranking a trading mobile app: go 98%, redis 86%, aws 53%, native 99%, with a clarifying question about user count" width="900">
+
 </div>
 
 You type what you want built, for example *"a trading mobile app that is very optimised
