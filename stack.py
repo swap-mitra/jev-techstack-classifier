@@ -111,7 +111,14 @@ def recommend(requirements: str) -> dict:
         if response.nouls[f"clarify_{k}"].noul < CLARIFY_THRESHOLD
     ]
     usage = response.usage
-    return {"layers": layers, "clarify": clarify, "tokens_in": usage.input_tokens, "tokens_out": usage.output_tokens}
+    return {
+        "layers": layers,
+        "descriptions": LAYERS,
+        "clarify": clarify,
+        "model": response.model,
+        "tokens_in": usage.input_tokens,
+        "tokens_out": usage.output_tokens,
+    }
 
 
 def show(result) -> None:

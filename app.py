@@ -10,7 +10,7 @@ from pathlib import Path
 
 from stack import recommend
 
-PAGE = Path(__file__).with_name("index.html").read_bytes()
+HTML_PATH = Path(__file__).with_name("index.html")
 MAX_CHARS = 5000
 
 
@@ -18,7 +18,11 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path != "/":
             return self.send_error(404)
-        self._send(200, PAGE, "text/html; charset=utf-8")
+        try:
+            content = HTML_PATH.read_bytes()
+            self._send(200, content, "text/html; charset=utf-8")
+        except Exception as e:
+            self.send_error(500, str(e))
 
     def do_POST(self):
         if self.path != "/api/recommend":

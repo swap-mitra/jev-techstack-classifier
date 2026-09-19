@@ -3,102 +3,1361 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Which tech stack?</title>
+<title>Jev // Tech Stack Classifier Console</title>
 <style>
-  :root { --bg:#16161a; --panel:#1f1f24; --line:#2e2e35; --text:#ececf1; --muted:#9a9aa5; --accent:#8b9cff; --bar:#434a7a; }
-  * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.5 system-ui, sans-serif; }
-  main { max-width:640px; margin:0 auto; padding:40px 16px; }
-  h1 { font-size:22px; margin:0 0 6px; }
-  .muted { color:var(--muted); }
-  textarea { width:100%; min-height:90px; margin:16px 0 12px; padding:12px; background:var(--panel); color:var(--text);
-    border:1px solid var(--line); border-radius:8px; font:inherit; resize:vertical; }
-  .row { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
-  button { background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:6px; padding:7px 12px; font:inherit; font-size:13px; cursor:pointer; }
-  button.primary { background:var(--accent); color:#111; border:0; font-weight:600; padding:9px 18px; font-size:15px; }
-  button:disabled { opacity:.5; cursor:wait; }
-  .clarify { margin-top:24px; padding:14px; border:1px dashed var(--accent); border-radius:8px; }
-  .clarify p { margin:0 0 8px; font-weight:600; }
-  .clarify .q + .q { margin-top:12px; }
-  h2 { font-size:12px; font-weight:500; color:var(--muted); margin:28px 0 0; text-transform:uppercase; letter-spacing:.05em; }
-  .pick { font-size:26px; font-weight:700; margin:0 0 10px; }
-  .bar { position:relative; display:flex; justify-content:space-between; padding:7px 10px; margin-bottom:6px;
-    background:var(--panel); border:1px solid var(--line); border-radius:6px; overflow:hidden; }
-  .bar i { position:absolute; inset:0 auto 0 0; background:var(--bar); }
-  .bar span { position:relative; }
-  .bar b { position:relative; font-weight:600; }
-  .meta { font-size:12px; margin-top:4px; }
-  .error { color:#ff8a8a; margin-top:16px; }
+  :root {
+    --bg-base: #08090d;
+    --bg-surface: #0e1118;
+    --bg-subtle: #141824;
+    --bg-overlay: #191f2e;
+    --border-dim: #1e2433;
+    --border-mid: #2b3347;
+    --border-bright: #3f4a66;
+    
+    --text-high: #f1f5f9;
+    --text-mid: #94a3b8;
+    --text-dim: #64748b;
+    --text-accent: #38bdf8;
+    
+    --telemetry-green: #10b981;
+    --telemetry-green-bg: rgba(16, 185, 129, 0.12);
+    --telemetry-green-border: rgba(16, 185, 129, 0.35);
+    
+    --telemetry-amber: #f59e0b;
+    --telemetry-amber-bg: rgba(245, 158, 11, 0.12);
+    --telemetry-amber-border: rgba(245, 158, 11, 0.35);
+    
+    --telemetry-rose: #ef4444;
+    --telemetry-rose-bg: rgba(239, 68, 68, 0.12);
+    --telemetry-rose-border: rgba(239, 68, 68, 0.35);
+    
+    --telemetry-cyan: #38bdf8;
+    --telemetry-cyan-bg: rgba(56, 189, 248, 0.12);
+    
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", "Fira Code", monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body {
+    background-color: var(--bg-base);
+    color: var(--text-high);
+    font-family: var(--font-sans);
+    font-size: 13.5px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    padding-bottom: 60px;
+    min-height: 100vh;
+  }
+
+  /* Monospace & Tabular Utilities */
+  .mono { font-family: var(--font-mono); }
+  .tnum { font-variant-numeric: tabular-nums; }
+  .dim { color: var(--text-dim); }
+  .mid { color: var(--text-mid); }
+  .accent { color: var(--text-accent); }
+
+  /* Top Navigation / Telemetry HUD */
+  header.hud {
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border-dim);
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  .hud-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .status-beacon {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 8px;
+    background: var(--telemetry-green-bg);
+    border: 1px solid var(--telemetry-green-border);
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--telemetry-green);
+    letter-spacing: 0.05em;
+  }
+  .beacon-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--telemetry-green);
+    box-shadow: 0 0 6px var(--telemetry-green);
+  }
+
+  .hud-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--text-high);
+  }
+
+  .hud-stats {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 12px;
+  }
+
+  .hud-stat-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-subtle);
+    padding: 3px 10px;
+    border: 1px solid var(--border-dim);
+    border-radius: 4px;
+  }
+
+  .hud-btn {
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-mid);
+    color: var(--text-mid);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .hud-btn:hover {
+    color: var(--text-high);
+    border-color: var(--border-bright);
+    background: var(--bg-overlay);
+  }
+
+  /* Main Container */
+  main {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 24px 20px;
+  }
+
+  /* Console Panel */
+  .console-panel {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-mid);
+    border-radius: 6px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    background: var(--bg-subtle);
+    border-bottom: 1px solid var(--border-dim);
+    padding: 8px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+  }
+
+  .panel-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-mid);
+  }
+
+  .panel-header-left svg {
+    color: var(--text-accent);
+  }
+
+  .panel-header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .editor-wrapper {
+    position: relative;
+    padding: 12px 14px;
+    background: #090b10;
+  }
+
+  textarea#req {
+    width: 100%;
+    min-height: 105px;
+    background: transparent;
+    color: var(--text-high);
+    border: none;
+    outline: none;
+    resize: vertical;
+    font-family: var(--font-mono);
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+  textarea#req::placeholder {
+    color: #475569;
+  }
+
+  /* Presets Bar */
+  .presets-bar {
+    background: var(--bg-subtle);
+    border-top: 1px solid var(--border-dim);
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .presets-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-dim);
+    letter-spacing: 0.05em;
+    margin-right: 4px;
+  }
+
+  .preset-pill {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-dim);
+    color: var(--text-mid);
+    padding: 4px 9px;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .preset-pill:hover {
+    color: var(--text-high);
+    border-color: var(--text-accent);
+    background: var(--bg-overlay);
+  }
+  .preset-key {
+    background: var(--bg-overlay);
+    border: 1px solid var(--border-mid);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 9.5px;
+    color: var(--text-dim);
+  }
+
+  /* Action Bar */
+  .action-bar {
+    padding: 10px 14px;
+    background: var(--bg-surface);
+    border-top: 1px solid var(--border-dim);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .btn-primary {
+    background: #1d4ed8;
+    color: #ffffff;
+    border: 1px solid #2563eb;
+    border-radius: 4px;
+    padding: 7px 18px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: 0.04em;
+    transition: all 0.15s ease;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: #2563eb;
+    border-color: #3b82f6;
+  }
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: wait;
+  }
+
+  .btn-secondary {
+    background: var(--bg-subtle);
+    color: var(--text-mid);
+    border: 1px solid var(--border-mid);
+    border-radius: 4px;
+    padding: 7px 14px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    transition: all 0.15s ease;
+  }
+  .btn-secondary:hover {
+    color: var(--text-high);
+    background: var(--bg-overlay);
+  }
+
+  .kbd-hint {
+    background: rgba(255,255,255,0.15);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 10.5px;
+    font-weight: 500;
+  }
+
+  /* Clarifications Bar (Diagnostics) */
+  .clarify-box {
+    background: var(--bg-surface);
+    border: 1px solid var(--telemetry-amber-border);
+    border-left: 3px solid var(--telemetry-amber);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  .clarify-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--telemetry-amber);
+    letter-spacing: 0.06em;
+    margin-bottom: 10px;
+  }
+
+  .clarify-item {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-dim);
+  }
+  .clarify-item:first-child {
+    border-top: none;
+    margin-top: 0;
+    padding-top: 0;
+  }
+
+  .clarify-question {
+    font-size: 12.5px;
+    color: var(--text-high);
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .clarify-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .clarify-chip {
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-mid);
+    color: var(--text-high);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11.5px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: var(--font-mono);
+  }
+  .clarify-chip:hover {
+    border-color: var(--telemetry-amber);
+    background: var(--telemetry-amber-bg);
+    color: #fef08a;
+  }
+
+  /* Results Blueprint Spec Strip */
+  .spec-strip {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-mid);
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 20px;
+    animation: fadeIn 0.25s ease-out;
+  }
+
+  .spec-strip-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-dim);
+  }
+
+  .spec-title-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .spec-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--text-high);
+  }
+
+  .spec-badge-score {
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .spec-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .spec-action-btn {
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-dim);
+    color: var(--text-mid);
+    padding: 4px 9px;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .spec-action-btn:hover {
+    color: var(--text-high);
+    border-color: var(--border-bright);
+    background: var(--bg-overlay);
+  }
+
+  .spec-pipeline {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+  }
+
+  .spec-node {
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-dim);
+    border-radius: 4px;
+    padding: 10px 12px;
+    position: relative;
+  }
+
+  .spec-node-layer {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+
+  .spec-node-pick {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-high);
+    font-family: var(--font-mono);
+    margin-bottom: 2px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .spec-node-prob {
+    font-size: 12px;
+    color: var(--text-accent);
+    font-weight: 600;
+  }
+
+  .spec-node-desc {
+    font-size: 11px;
+    color: var(--text-mid);
+    line-height: 1.35;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Layers Grid */
+  .layers-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .layer-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-mid);
+    border-radius: 6px;
+    overflow: hidden;
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .layer-card-header {
+    background: var(--bg-subtle);
+    border-bottom: 1px solid var(--border-dim);
+    padding: 10px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .layer-card-title-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .layer-tag {
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    font-family: var(--font-mono);
+  }
+
+  .layer-winner-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--text-high);
+    font-family: var(--font-mono);
+  }
+
+  .layer-winner-pct {
+    color: var(--telemetry-green);
+    font-size: 12.5px;
+  }
+
+  .confidence-meter-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .confidence-pill {
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    font-family: var(--font-mono);
+  }
+  .confidence-high {
+    background: var(--telemetry-green-bg);
+    border: 1px solid var(--telemetry-green-border);
+    color: var(--telemetry-green);
+  }
+  .confidence-mid {
+    background: var(--telemetry-amber-bg);
+    border: 1px solid var(--telemetry-amber-border);
+    color: var(--telemetry-amber);
+  }
+  .confidence-low {
+    background: var(--telemetry-rose-bg);
+    border: 1px solid var(--telemetry-rose-border);
+    color: var(--telemetry-rose);
+  }
+
+  /* Table Distribution Rows */
+  .dist-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .dist-row {
+    border-bottom: 1px solid var(--border-dim);
+    transition: background 0.1s ease;
+  }
+  .dist-row:last-child {
+    border-bottom: none;
+  }
+  .dist-row:hover {
+    background: var(--bg-subtle);
+  }
+  .dist-row.is-winner {
+    background: rgba(16, 185, 129, 0.03);
+  }
+
+  .dist-cell {
+    padding: 8px 16px;
+    vertical-align: middle;
+  }
+
+  .col-rank {
+    width: 32px;
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    text-align: center;
+  }
+  .dist-row.is-winner .col-rank {
+    color: var(--telemetry-green);
+    font-weight: 700;
+  }
+
+  .col-info {
+    min-width: 240px;
+  }
+
+  .tech-name {
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font-mono);
+    color: var(--text-high);
+    display: inline-block;
+    margin-right: 8px;
+  }
+
+  .tech-desc {
+    font-size: 11.5px;
+    color: var(--text-mid);
+    display: inline-block;
+  }
+
+  .col-bar {
+    width: 200px;
+    padding-right: 12px;
+  }
+
+  .progress-track {
+    height: 7px;
+    background: #171b26;
+    border: 1px solid var(--border-dim);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: #3b82f6;
+    border-radius: 1px;
+    transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .dist-row.is-winner .progress-fill {
+    background: var(--telemetry-green);
+  }
+
+  .col-pct {
+    width: 65px;
+    text-align: right;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: var(--font-mono);
+    color: var(--text-high);
+  }
+  .dist-row.is-winner .col-pct {
+    color: var(--telemetry-green);
+  }
+
+  /* Empty & Loading States */
+  .state-placeholder {
+    padding: 48px 24px;
+    text-align: center;
+    background: var(--bg-surface);
+    border: 1px dashed var(--border-mid);
+    border-radius: 6px;
+    color: var(--text-dim);
+  }
+  .state-placeholder p {
+    font-size: 12.5px;
+    margin-top: 6px;
+  }
+
+  .loading-bar {
+    height: 2px;
+    width: 100%;
+    background: var(--border-dim);
+    overflow: hidden;
+    position: relative;
+  }
+  .loading-bar-inner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    background: var(--text-accent);
+    animation: scanline 1.5s infinite ease-in-out;
+  }
+
+  @keyframes scanline {
+    0% { left: -30%; width: 30%; }
+    50% { left: 40%; width: 40%; }
+    100% { left: 100%; width: 30%; }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Error Banner */
+  .error-banner {
+    background: var(--telemetry-rose-bg);
+    border: 1px solid var(--telemetry-rose-border);
+    border-left: 3px solid var(--telemetry-rose);
+    color: #fca5a5;
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  /* Bottom Telemetry Dock */
+  footer.telemetry-dock {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--bg-surface);
+    border-top: 1px solid var(--border-dim);
+    padding: 6px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--text-dim);
+    z-index: 50;
+  }
+
+  .telemetry-group {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .telemetry-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .telemetry-val {
+    color: var(--text-mid);
+    font-weight: 600;
+  }
+
+  /* Toast Notification */
+  #toast {
+    position: fixed;
+    bottom: 40px;
+    right: 20px;
+    background: #1e293b;
+    border: 1px solid var(--border-bright);
+    color: var(--text-high);
+    padding: 7px 14px;
+    border-radius: 4px;
+    font-size: 11.5px;
+    font-family: var(--font-mono);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    transform: translateY(8px);
+    z-index: 100;
+  }
+  #toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Modal for shortcuts */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+  }
+  .modal-box {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-bright);
+    border-radius: 6px;
+    width: 440px;
+    max-width: 90vw;
+    padding: 18px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+  }
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+  .modal-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .modal-table tr {
+    border-bottom: 1px solid var(--border-dim);
+  }
+  .modal-table tr:last-child {
+    border-bottom: none;
+  }
+  .modal-table td {
+    padding: 8px 0;
+  }
+  .modal-kbd {
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-mid);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    color: var(--text-accent);
+    font-size: 11px;
+  }
+
+  @media (max-width: 768px) {
+    .hud-stats { display: none; }
+    .col-bar { width: 120px; }
+    .tech-desc { display: block; margin-top: 2px; }
+    .telemetry-dock { flex-direction: column; gap: 4px; padding: 6px 12px; font-size: 10px; }
+  }
 </style>
 </head>
 <body>
-<main>
-  <h1>Which tech stack?</h1>
-  <div class="muted">Describe a project and Jev picks a stack. It is a classification model, so every option gets a probability.</div>
-  <textarea id="req" placeholder="Build me a trading mobile app that is very optimised for speed"></textarea>
-  <div class="row">
-    <button class="primary" id="go">Classify</button>
-    <span id="examples" class="row"></span>
-    <span class="muted" style="font-size:12px">Ctrl+Enter</span>
+
+<!-- Header / HUD -->
+<header class="hud">
+  <div class="hud-brand">
+    <span class="hud-title mono">JEV // TECH STACK CLASSIFIER</span>
+    <span class="dim mono" style="font-size:11px">TYPE-SAFE PROB ENGINE</span>
   </div>
-  <div id="error" class="error" hidden></div>
-  <div id="clarify"></div>
-  <div id="out"></div>
-  <div id="meta" class="muted meta"></div>
+  <div class="hud-stats mono">
+    <div class="hud-stat-item">
+      <span class="dim">LATENCY:</span>
+      <span id="hud-latency" class="tnum mid">-- ms</span>
+    </div>
+    <div class="hud-stat-item">
+      <span class="dim">TOKENS:</span>
+      <span id="hud-tokens" class="tnum mid">0 IN / 0 OUT</span>
+    </div>
+    <button class="hud-btn" id="btn-shortcuts" title="Keyboard Shortcuts (Press ?)">? KEYS</button>
+  </div>
+</header>
+
+<main>
+  <!-- Console Input Area -->
+  <section class="console-panel">
+    <div class="panel-header mono">
+      <div class="panel-header-left">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+        <span>REQUIREMENTS SPECIFICATION CONSOLE</span>
+      </div>
+      <div class="panel-header-right dim">
+        <span id="char-count" class="tnum">0 / 5000 chars</span>
+      </div>
+    </div>
+    
+    <div class="editor-wrapper">
+      <textarea id="req" placeholder="// Enter project requirements or business architecture constraints...
+// Example: Build an ultra-low latency mobile trading platform for iOS and Android with live quotes."></textarea>
+    </div>
+
+    <!-- Presets bar -->
+    <div class="presets-bar">
+      <span class="presets-label mono">PRESETS:</span>
+      <button class="preset-pill" data-preset="0"><span class="preset-key">1</span> FINTECH</button>
+      <button class="preset-pill" data-preset="1"><span class="preset-key">2</span> ENTERPRISE</button>
+      <button class="preset-pill" data-preset="2"><span class="preset-key">3</span> E-COMMERCE</button>
+      <button class="preset-pill" data-preset="3"><span class="preset-key">4</span> IOT/SENSORS</button>
+      <button class="preset-pill" data-preset="4"><span class="preset-key">5</span> BIG-DATA</button>
+    </div>
+
+    <!-- Loading Bar -->
+    <div id="loading-bar" class="loading-bar" style="display: none;">
+      <div class="loading-bar-inner"></div>
+    </div>
+
+    <!-- Action Bar -->
+    <div class="action-bar">
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button class="btn-primary" id="go">
+          <span>CLASSIFY STACK</span>
+          <span class="kbd-hint">Ctrl ↵</span>
+        </button>
+        <button class="btn-secondary" id="btn-clear">CLEAR</button>
+      </div>
+      <div id="exec-status" class="mono dim" style="font-size:11px">READY</div>
+    </div>
+  </section>
+
+  <!-- Error Banner -->
+  <div id="error" class="error-banner" style="display: none;"></div>
+
+  <!-- Clarification Diagnostics -->
+  <div id="clarify" style="display: none;"></div>
+
+  <!-- Results View Area -->
+  <div id="results-area">
+    <div class="state-placeholder mono" id="initial-placeholder">
+      <div style="font-size:14px; font-weight:600; color:var(--text-mid); margin-bottom:4px;">AWAITING SPECIFICATION</div>
+      <p>Describe your software constraints above and hit <strong>Classify Stack</strong> or pick an archetype preset.</p>
+    </div>
+  </div>
 </main>
+
+<!-- Bottom Telemetry Dock -->
+<footer class="telemetry-dock">
+  <div class="telemetry-group">
+    <div class="telemetry-item">
+      <span>ENGINE:</span>
+      <span id="dock-model" class="telemetry-val">--</span>
+    </div>
+    <div class="telemetry-item">
+      <span>HOST:</span>
+      <span id="dock-host" class="telemetry-val">--</span>
+    </div>
+  </div>
+  <div class="telemetry-group">
+    <div class="telemetry-item">
+      <span>SESSION RUNS:</span>
+      <span id="dock-runs" class="telemetry-val tnum">0</span>
+    </div>
+    <div class="telemetry-item">
+      <span>LAST EVAL:</span>
+      <span id="dock-last-ms" class="telemetry-val tnum">--</span>
+    </div>
+  </div>
+</footer>
+
+<!-- Toast Element -->
+<div id="toast"></div>
+
+<!-- Keyboard Shortcuts Modal -->
+<div id="modal-shortcuts" class="modal-backdrop" style="display: none;">
+  <div class="modal-box">
+    <div class="modal-header mono">
+      <span>KEYBOARD SHORTCUTS</span>
+      <button id="btn-close-modal" class="hud-btn" style="padding:2px 8px;">✕</button>
+    </div>
+    <table class="modal-table">
+      <tr>
+        <td class="dim">Run classification</td>
+        <td style="text-align:right;"><span class="modal-kbd">Ctrl + Enter</span> / <span class="modal-kbd">⌘ + Enter</span></td>
+      </tr>
+      <tr>
+        <td class="dim">Select Presets 1-5</td>
+        <td style="text-align:right;"><span class="modal-kbd">1</span> ... <span class="modal-kbd">5</span> <span class="dim">(unfocused)</span></td>
+      </tr>
+      <tr>
+        <td class="dim">Clear editor</td>
+        <td style="text-align:right;"><span class="modal-kbd">Esc</span></td>
+      </tr>
+      <tr>
+        <td class="dim">Copy Architecture Spec</td>
+        <td style="text-align:right;"><span class="modal-kbd">Alt + C</span></td>
+      </tr>
+      <tr>
+        <td class="dim">Toggle Shortcuts</td>
+        <td style="text-align:right;"><span class="modal-kbd">?</span></td>
+      </tr>
+    </table>
+  </div>
+</div>
+
 <script>
-const EXAMPLES = [
-  "Build me a trading mobile app that is very optimised for speed",
-  "Internal HR leave tracker for 50 employees at a Microsoft-based company",
-  "E-commerce storefront for a small bakery with online ordering",
-  "IoT platform collecting temperature readings from 10,000 factory sensors",
-  "Analytics dashboard over billions of ad-click events",
+// Built-in archetypes
+const PRESETS = [
+  {
+    title: "Fintech",
+    prompt: "Build me a high-frequency trading mobile app that is very optimised for speed and sub-millisecond execution."
+  },
+  {
+    title: "Enterprise",
+    prompt: "Internal HR leave tracker for 50 employees at a Microsoft-based enterprise company with Active Directory."
+  },
+  {
+    title: "E-Commerce",
+    prompt: "E-commerce storefront for a boutique bakery with online catalogue ordering and local curb-side pickup."
+  },
+  {
+    title: "IoT / Sensors",
+    prompt: "Industrial IoT telemetry platform collecting real-time temperature and vibration readings from 10,000 factory sensors."
+  },
+  {
+    title: "Big Data",
+    prompt: "High-throughput analytics dashboard aggregating ad-click events over billions of impressions with real-time slicing."
+  }
 ];
+
+let latestData = null;
+document.getElementById("dock-host").textContent = location.host;
+let sessionRunCount = 0;
+
 const $ = id => document.getElementById(id);
-const esc = s => s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const label = s => s.replace(/_/g, " ");
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const formatLabel = s => s.replace(/_/g, " ").toUpperCase();
 
-EXAMPLES.forEach((ex, i) => {
-  const b = document.createElement("button");
-  b.textContent = `Example ${i + 1}`;
-  b.onclick = () => { $("req").value = ex; run(); };
-  $("examples").append(b);
+function showToast(msg) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+// Update char count
+function updateCharCount() {
+  const len = $("req").value.length;
+  $("char-count").textContent = `${len} / 5000 chars`;
+}
+$("req").addEventListener("input", updateCharCount);
+
+// Presets setup
+document.querySelectorAll(".preset-pill").forEach(pill => {
+  pill.addEventListener("click", () => {
+    const idx = parseInt(pill.dataset.preset, 10);
+    if (PRESETS[idx]) {
+      $("req").value = PRESETS[idx].prompt;
+      updateCharCount();
+      runClassification();
+    }
+  });
 });
-$("go").onclick = run;
-$("req").addEventListener("keydown", e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) run(); });
 
-async function run() {
+// Clear button
+$("btn-clear").addEventListener("click", () => {
+  $("req").value = "";
+  updateCharCount();
+  $("req").focus();
+});
+
+// Shortcuts modal toggle
+$("btn-shortcuts").addEventListener("click", () => {
+  $("modal-shortcuts").style.display = "flex";
+});
+$("btn-close-modal").addEventListener("click", () => {
+  $("modal-shortcuts").style.display = "none";
+});
+$("modal-shortcuts").addEventListener("click", (e) => {
+  if (e.target === $("modal-shortcuts")) $("modal-shortcuts").style.display = "none";
+});
+
+// Keyboard shortcuts
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    if ($("modal-shortcuts").style.display === "flex") {
+      $("modal-shortcuts").style.display = "none";
+    } else {
+      $("req").value = "";
+      updateCharCount();
+    }
+  }
+  if (e.key === "?" && document.activeElement !== $("req")) {
+    e.preventDefault();
+    $("modal-shortcuts").style.display = $("modal-shortcuts").style.display === "flex" ? "none" : "flex";
+  }
+  if (e.altKey && (e.key === "c" || e.key === "C")) {
+    e.preventDefault();
+    copySpecMarkdown();
+  }
+  if (document.activeElement !== $("req") && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    if (["1","2","3","4","5"].includes(e.key)) {
+      const idx = parseInt(e.key, 10) - 1;
+      if (PRESETS[idx]) {
+        $("req").value = PRESETS[idx].prompt;
+        updateCharCount();
+        runClassification();
+      }
+    }
+  }
+});
+
+$("req").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    runClassification();
+  }
+});
+$("go").addEventListener("click", runClassification);
+
+// Execution
+async function runClassification() {
   const requirements = $("req").value.trim();
-  if (!requirements) return;
-  $("go").disabled = true; $("error").hidden = true;
+  if (!requirements) {
+    $("req").focus();
+    return;
+  }
+
+  $("go").disabled = true;
+  $("loading-bar").style.display = "block";
+  $("exec-status").textContent = "ANALYZING REQUIREMENTS...";
+  $("error").style.display = "none";
+
+  const startTime = performance.now();
+
   try {
-    const res = await fetch("/api/recommend", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ requirements }) });
+    const res = await fetch("/api/recommend", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ requirements })
+    });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || res.statusText);
-    render(data);
-  } catch (e) {
-    $("error").textContent = e.message; $("error").hidden = false;
+
+    const clientMs = Math.round(performance.now() - startTime);
+    sessionRunCount++;
+    data._clientMs = clientMs;
+    latestData = data;
+
+    renderResults(data);
+  } catch (err) {
+    $("error").textContent = `EVALUATION ERROR: ${err.message}`;
+    $("error").style.display = "block";
+    $("exec-status").textContent = "ERROR";
   } finally {
     $("go").disabled = false;
+    $("loading-bar").style.display = "none";
   }
 }
 
-function render(data) {
-  // Clarifying questions: answering appends to the prompt and re-runs.
-  $("clarify").innerHTML = data.clarify.length ? `<div class="clarify">${data.clarify.map(c => `
-    <div class="q"><p>${esc(c.ask)}</p><div class="row">${c.options.map(o =>
-      `<button data-ask="${esc(c.ask)}" data-opt="${esc(o)}">${esc(o)}</button>`).join("")}</div></div>`).join("")}</div>` : "";
-  $("clarify").querySelectorAll("button").forEach(b => b.onclick = () => {
-    $("req").value = `${$("req").value.trim()}\n${b.dataset.ask} ${b.dataset.opt}.`;
-    run();
-  });
+function getConfidenceMeta(conf) {
+  if (conf >= 0.60) {
+    return { label: "HIGH", cls: "confidence-high" };
+  } else if (conf >= 0.35) {
+    return { label: "MODERATE", cls: "confidence-mid" };
+  } else {
+    return { label: "LOW CONF", cls: "confidence-low" };
+  }
+}
 
-  $("out").innerHTML = Object.entries(data.layers).map(([layer, [ranked, conf]]) => `
-    <h2>${esc(layer)} · confidence ${conf.toFixed(2)}</h2>
-    <div class="pick">${esc(label(ranked[0][0]))}</div>
-    ${ranked.map(([opt, p]) => `<div class="bar"><i style="width:${(p * 100).toFixed(1)}%"></i>
-      <span>${esc(label(opt))}</span><b>${Math.round(p * 100)}%</b></div>`).join("")}`).join("");
-  $("meta").textContent = `${data.ms} ms · ${data.tokens_in} tokens in, ${data.tokens_out} out`;
+function renderResults(data) {
+  // Update HUD
+  const ms = data.ms || data._clientMs || 0;
+  $("hud-latency").textContent = `${ms} ms`;
+  $("hud-tokens").textContent = `${data.tokens_in} IN / ${data.tokens_out} OUT`;
+  $("dock-runs").textContent = sessionRunCount;
+  $("dock-last-ms").textContent = `${ms} ms`;
+  $("exec-status").textContent = "COMPLETED";
+  $("dock-model").textContent = data.model;
+
+  // Hide initial placeholder
+  const placeholder = $("initial-placeholder");
+  if (placeholder) placeholder.style.display = "none";
+
+  const descMap = data.descriptions;
+
+  // Clarifications
+  const clarifyContainer = $("clarify");
+  if (data.clarify && data.clarify.length > 0) {
+    clarifyContainer.style.display = "block";
+    clarifyContainer.innerHTML = `
+      <div class="clarify-box">
+        <div class="clarify-header mono">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          <span>SPECIFICATION GAP DETECTED: RECOMMENDED ARCHITECTURAL CONSTRAINTS</span>
+        </div>
+        ${data.clarify.map(c => `
+          <div class="clarify-item">
+            <div class="clarify-question">${esc(c.ask)}</div>
+            <div class="clarify-options">
+              ${c.options.map(opt => `
+                <button class="clarify-chip" data-ask="${esc(c.ask)}" data-opt="${esc(opt)}">+ ${esc(opt)}</button>
+              `).join("")}
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    `;
+
+    clarifyContainer.querySelectorAll(".clarify-chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        const ask = chip.dataset.ask;
+        const opt = chip.dataset.opt;
+        const current = $("req").value.trim();
+        $("req").value = `${current}\n${ask} ${opt}.`;
+        updateCharCount();
+        runClassification();
+      });
+    });
+  } else {
+    clarifyContainer.style.display = "none";
+  }
+
+  // Calculate Average Confidence
+  let totalConf = 0;
+  let layerCount = 0;
+  const winnerMap = {};
+
+  Object.entries(data.layers).forEach(([layer, [ranked, conf]]) => {
+    totalConf += conf;
+    layerCount++;
+    winnerMap[layer] = {
+      pick: ranked[0][0],
+      prob: ranked[0][1],
+      conf: conf
+    };
+  });
+  const avgConf = layerCount ? (totalConf / layerCount) : 0;
+
+  // Render Blueprint Spec Strip & Layer Panels
+  const resultsArea = $("results-area");
+  resultsArea.innerHTML = `
+    <!-- Architecture Blueprint Summary -->
+    <div class="spec-strip">
+      <div class="spec-strip-header">
+        <div class="spec-title-group">
+          <span class="spec-title mono">PRIMARY ARCHITECTURE SPECIFICATION</span>
+          <span class="spec-badge-score mono dim" title="Mean of each layer's distribution concentration; not a measure of overall stack fit">AVG PER-LAYER CONFIDENCE: ${avgConf.toFixed(2)}</span>
+        </div>
+        <div class="spec-actions">
+          <button class="spec-action-btn" id="btn-copy-md" title="Copy Markdown Architecture Spec">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            <span>COPY SPEC</span>
+          </button>
+          <button class="spec-action-btn" id="btn-copy-mermaid" title="Copy Mermaid Flowchart">
+            <span>MERMAID</span>
+          </button>
+          <button class="spec-action-btn" id="btn-copy-json" title="Copy Raw JSON">
+            <span>JSON</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="spec-pipeline">
+        ${Object.entries(data.layers).map(([layer, [ranked, conf]]) => {
+          const topOpt = ranked[0][0];
+          const topProb = (ranked[0][1] * 100).toFixed(0);
+          const desc = (descMap[layer] && descMap[layer][topOpt]) || topOpt;
+          return `
+            <div class="spec-node">
+              <div class="spec-node-layer mono">${esc(layer)}</div>
+              <div class="spec-node-pick">
+                <span>${esc(formatLabel(topOpt))}</span>
+                <span class="spec-node-prob mono">${topProb}%</span>
+              </div>
+              <div class="spec-node-desc" title="${esc(desc)}">${esc(desc)}</div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    </div>
+
+    <!-- Detailed Layer Inspector Grid -->
+    <div class="layers-grid">
+      ${Object.entries(data.layers).map(([layer, [ranked, conf]], idx) => {
+        const topOpt = ranked[0][0];
+        const topProbPct = (ranked[0][1] * 100).toFixed(1);
+        const confMeta = getConfidenceMeta(conf);
+        const layerNumber = String(idx + 1).padStart(2, "0");
+
+        return `
+          <div class="layer-card">
+            <div class="layer-card-header">
+              <div class="layer-card-title-group">
+                <span class="layer-tag">TIER ${layerNumber} // ${esc(layer)}</span>
+                <div class="layer-winner-badge">
+                  <span>${esc(formatLabel(topOpt))}</span>
+                  <span class="layer-winner-pct mono">${topProbPct}%</span>
+                </div>
+              </div>
+              <div class="confidence-meter-group">
+                <span class="confidence-pill ${confMeta.cls}">CONF ${conf.toFixed(2)} [${confMeta.label}]</span>
+              </div>
+            </div>
+
+            <table class="dist-table">
+              <tbody>
+                ${ranked.map(([opt, prob], rIdx) => {
+                  const isWinner = rIdx === 0;
+                  const probPct = (prob * 100).toFixed(1);
+                  const desc = (descMap[layer] && descMap[layer][opt]) || opt;
+                  return `
+                    <tr class="dist-row ${isWinner ? "is-winner" : ""}">
+                      <td class="dist-cell col-rank mono">${isWinner ? "★" : `#${rIdx + 1}`}</td>
+                      <td class="dist-cell col-info">
+                        <span class="tech-name">${esc(opt)}</span>
+                        <span class="tech-desc">${esc(desc)}</span>
+                      </td>
+                      <td class="dist-cell col-bar">
+                        <div class="progress-track">
+                          <div class="progress-fill" style="width: ${probPct}%"></div>
+                        </div>
+                      </td>
+                      <td class="dist-cell col-pct mono tnum">${probPct}%</td>
+                    </tr>
+                  `;
+                }).join("")}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }).join("")}
+    </div>
+  `;
+
+  // Attach Spec Action Handlers
+  $("btn-copy-md").addEventListener("click", copySpecMarkdown);
+  $("btn-copy-mermaid").addEventListener("click", copyMermaidDiagram);
+  $("btn-copy-json").addEventListener("click", copyRawJSON);
+}
+
+function copySpecMarkdown() {
+  if (!latestData) return;
+  const descMap = latestData.descriptions;
+  let md = `### Jev Recommended Tech Stack\n\n`;
+  md += `| Layer | Technology | Probability | Description |\n`;
+  md += `| :--- | :--- | :--- | :--- |\n`;
+  for (const [layer, [ranked]] of Object.entries(latestData.layers)) {
+    const top = ranked[0];
+    const desc = (descMap[layer] && descMap[layer][top[0]]) || top[0];
+    md += `| **${layer.toUpperCase()}** | \`${top[0]}\` | ${(top[1] * 100).toFixed(1)}% | ${desc} |\n`;
+  }
+  md += `\n*Evaluated with TypeSafe Jev (${latestData.ms || 0} ms, ${latestData.tokens_in} tokens in / ${latestData.tokens_out} out)*\n`;
+  
+  navigator.clipboard.writeText(md).then(() => {
+    showToast("Architecture spec copied to clipboard as Markdown");
+  });
+}
+
+function copyMermaidDiagram() {
+  if (!latestData) return;
+  let mermaid = `graph LR\n`;
+  mermaid += `  subgraph Architecture [Recommended Stack Blueprint]\n`;
+  const items = [];
+  for (const [layer, [ranked]] of Object.entries(latestData.layers)) {
+    const opt = ranked[0][0];
+    items.push(`    ${layer}["${layer.toUpperCase()}<br/><b>${opt}</b>"]`);
+  }
+  mermaid += items.join("\n");
+  mermaid += `\n    frontend --> backend --> database\n`;
+  mermaid += `    backend --> hosting\n`;
+  mermaid += `    mobile -.-> backend\n`;
+  mermaid += `  end\n`;
+
+  navigator.clipboard.writeText(mermaid).then(() => {
+    showToast("Mermaid diagram copied to clipboard");
+  });
+}
+
+function copyRawJSON() {
+  if (!latestData) return;
+  navigator.clipboard.writeText(JSON.stringify(latestData, null, 2)).then(() => {
+    showToast("Raw JSON copied to clipboard");
+  });
 }
 </script>
 </body>
