@@ -23,6 +23,20 @@ Web UI:
 python app.py   # http://localhost:8000
 ```
 
+Visitors can paste their own key into the **JEV API KEY** field. It is stored only in
+their browser (untick "remember" to keep it for the session) and sent to this server
+with each request, which falls back to the server's `TYPESAFE_API_KEY` when none is given.
+
+## Deploy
+
+```sh
+HOST=0.0.0.0 PORT=8000 python app.py
+```
+
+- Leave `TYPESAFE_API_KEY` unset (and don't ship `.env`) on a public deployment,
+  otherwise every visitor runs on your key.
+- Serve it behind HTTPS, since visitors' keys travel in a request header.
+
 CLI:
 
 ```sh

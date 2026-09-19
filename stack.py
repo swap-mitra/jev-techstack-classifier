@@ -92,8 +92,11 @@ CLARIFY = {
 }
 
 
-def recommend(requirements: str) -> dict:
-    """Rank every layer's options and list clarifying questions the text leaves open."""
+def recommend(requirements: str, api_key: str | None = None) -> dict:
+    """Rank every layer's options and list clarifying questions the text leaves open.
+
+    api_key overrides TYPESAFE_API_KEY from the environment.
+    """
     questions = {
         layer: Choice(
             instructions=f"Given the business requirements in `requirements`, which {layer} technology is most suitable to build this software?",
@@ -102,7 +105,7 @@ def recommend(requirements: str) -> dict:
         for layer, options in LAYERS.items()
     }
     questions |= {f"clarify_{k}": Noul(instructions=c["check"] + " Consider `requirements`.") for k, c in CLARIFY.items()}
-    with TypeSafeClient() as client:
+    with TypeSafeClient(api_key=api_key) as client:
         response = client.system_one(state={"requirements": requirements}, questions=questions)
     layers = {}
     for layer in LAYERS:

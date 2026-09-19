@@ -829,6 +829,32 @@
     font-size: 11px;
   }
 
+  /* API key bar */
+  .key-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-mid);
+    border-radius: 6px;
+    padding: 8px 14px;
+    margin-bottom: 12px;
+    font-size: 11px;
+  }
+  .key-bar input {
+    flex: 1 1 220px;
+    min-width: 0;
+    background: #090b10;
+    border: 1px solid var(--border-dim);
+    border-radius: 4px;
+    color: var(--text-high);
+    padding: 5px 8px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+  .key-bar a { color: var(--text-accent); }
+
   @media (max-width: 768px) {
     .hud-stats { display: none; }
     .col-bar { width: 120px; }
@@ -859,6 +885,15 @@
 </header>
 
 <main>
+  <!-- Visitor's own TypeSafe key: kept in this browser, sent only to this app's server -->
+  <section class="key-bar mono">
+    <label for="api-key" class="dim">JEV API KEY:</label>
+    <input id="api-key" type="password" autocomplete="off" spellcheck="false" placeholder="paste your TypeSafe key">
+    <label class="dim"><input id="api-key-remember" type="checkbox" checked> remember</label>
+    <button class="btn-secondary" id="btn-key-clear" style="padding:4px 10px">FORGET</button>
+    <a href="https://console.typesafe.ai/" target="_blank" rel="noopener">get a key</a>
+  </section>
+
   <!-- Console Input Area -->
   <section class="console-panel">
     <div class="panel-header mono">
@@ -1004,10 +1039,24 @@ const PRESETS = [
 ];
 
 let latestData = null;
+
 document.getElementById("dock-host").textContent = location.host;
 let sessionRunCount = 0;
 
 const $ = id => document.getElementById(id);
+
+// Key storage is a convenience: storage can be blocked, so every access is guarded.
+const KEY_STORE = "typesafe-api-key";
+try { $("api-key").value = localStorage.getItem(KEY_STORE) || ""; } catch {}
+function saveKey() {
+  try {
+    if ($("api-key-remember").checked && $("api-key").value.trim()) localStorage.setItem(KEY_STORE, $("api-key").value.trim());
+    else localStorage.removeItem(KEY_STORE);
+  } catch {}
+}
+$("api-key").addEventListener("change", saveKey);
+$("api-key-remember").addEventListener("change", saveKey);
+$("btn-key-clear").addEventListener("click", () => { $("api-key").value = ""; saveKey(); showToast("API key forgotten"); });
 const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const formatLabel = s => s.replace(/_/g, " ").toUpperCase();
 
@@ -1112,7 +1161,7 @@ async function runClassification() {
   try {
     const res = await fetch("/api/recommend", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...($("api-key").value.trim() && { "X-TypeSafe-Key": $("api-key").value.trim() }) },
       body: JSON.stringify({ requirements })
     });
     const data = await res.json();
