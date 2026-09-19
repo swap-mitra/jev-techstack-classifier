@@ -1046,7 +1046,7 @@ let sessionRunCount = 0;
 const $ = id => document.getElementById(id);
 // On GitHub Pages there is no server, so requests go to the Cloudflare Worker (worker/).
 // Locally, app.py serves this page and the API on the same origin.
-const WORKER_URL = "https://jev-techstack-classifier.WORKERS_SUBDOMAIN.workers.dev";
+const WORKER_URL = "https://jev-techstack-classifier.jev-techstack-worker.workers.dev";
 const API_BASE = location.hostname.endsWith("github.io") ? WORKER_URL : "";
 
 // Key storage is a convenience: storage can be blocked, so every access is guarded.
