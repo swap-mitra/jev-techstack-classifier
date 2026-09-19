@@ -6,7 +6,8 @@
       "angular": "Angular enterprise web app",
       "svelte": "Svelte / SvelteKit lightweight web app",
       "server_rendered": "Server-rendered HTML templates (Django, Rails, Laravel views)",
-      "none": "No web frontend needed (API-only, CLI, batch job, or mobile-only)"
+      "none": "No web frontend needed (API-only, CLI, batch job, or mobile-only)",
+      "other": "None of these fit well; the requirements need something not listed"
     },
     "backend": {
       "node": "Node.js / TypeScript (Express, NestJS), good for real-time and JS teams",
@@ -16,7 +17,8 @@
       "go": "Go, high-concurrency services and infrastructure",
       "ruby": "Ruby on Rails, fast MVP CRUD apps",
       "php": "PHP (Laravel), content sites and cheap hosting",
-      "baas": "Backend-as-a-service (Firebase, Supabase), minimal custom server"
+      "baas": "Backend-as-a-service (Firebase, Supabase), minimal custom server",
+      "other": "None of these fit well; the requirements need something not listed"
     },
     "database": {
       "postgres": "PostgreSQL, relational data with integrity and reporting",
@@ -26,21 +28,24 @@
       "redis": "Redis as primary store, ephemeral or very low-latency data",
       "timeseries": "Time-series DB (TimescaleDB, InfluxDB), metrics, IoT, sensor data",
       "sqlite": "SQLite, embedded, single-user or offline apps",
-      "warehouse": "Data warehouse (BigQuery, Snowflake), analytics over large datasets"
+      "warehouse": "Data warehouse (BigQuery, Snowflake), analytics over large datasets",
+      "other": "None of these fit well; the requirements need something not listed"
     },
     "hosting": {
       "aws": "AWS, broad services, enterprise scale",
       "azure": "Azure, Microsoft ecosystem and enterprise compliance",
       "gcp": "Google Cloud, data and ML workloads",
       "paas": "PaaS (Vercel, Heroku, Render), small teams wanting zero ops",
-      "on_prem": "On-premises / private data center, strict data residency or air-gapped"
+      "on_prem": "On-premises / private data center, strict data residency or air-gapped",
+      "other": "None of these fit well; the requirements need something not listed"
     },
     "mobile": {
       "none": "No mobile app needed",
       "react_native": "React Native cross-platform app",
       "flutter": "Flutter cross-platform app",
       "native": "Native Swift (iOS) and Kotlin (Android) apps",
-      "pwa": "Progressive web app instead of store apps"
+      "pwa": "Progressive web app instead of store apps",
+      "other": "None of these fit well; the requirements need something not listed"
     }
   },
   "clarify": {

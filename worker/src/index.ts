@@ -3,7 +3,7 @@
  * API directly (it rejects cross-origin requests), so this forwards each request using
  * the visitor's own key from the X-TypeSafe-Key header. It never stores or logs the key.
  *
- * Mirrors recommend() in ../../stack.py and returns the same JSON shape.
+ * Static files in ../docs are served by Workers assets before this handler runs.
  */
 import config from "../../stack_config.json";
 
@@ -94,8 +94,17 @@ export default {
       .filter(([id, c]) => (data.answers[`clarify_${id}`] as NoulAnswer).noul < c.threshold)
       .map(([id, c]) => ({ id, ask: c.ask, options: c.options }));
 
+    // ponytail: hand-written clash rules; move to stack_config.json if the list grows
+    const top = (layer: string) => layers[layer][0][0][0];
+    const warnings: string[] = [];
+    if (top("frontend") === "none" && top("mobile") === "pwa")
+      warnings.push("Frontend 'none' clashes with mobile 'pwa': a PWA is a web frontend.");
+    if (top("frontend") === "none" && top("mobile") === "none" && top("backend") === "baas")
+      warnings.push("No frontend or mobile app, but a backend-as-a-service is meant to serve one.");
+
     return json(200, {
       layers,
+      warnings,
       descriptions: LAYERS,
       clarify,
       model: data.model,

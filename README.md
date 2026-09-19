@@ -25,6 +25,12 @@ own and stores nothing.
 ## Run locally
 
 ```sh
+cd worker && npm install && npx wrangler dev   # http://localhost:8787, page + API
+```
+
+Paste your key into the page. Python alternative:
+
+```sh
 pip install -r requirements.txt
 echo TYPESAFE_API_KEY=your-key > .env
 python app.py   # http://localhost:8000, serves docs/index.html plus the same API
@@ -41,19 +47,13 @@ python stack.py --demo   # live self-check against the API
 
 ## Deploy
 
-Pages serves `docs/` from `main`. To deploy the Worker:
-
-```sh
-cd worker
-npm install
-npx wrangler login
-npx wrangler deploy
-```
-
-Put the printed `*.workers.dev` URL into `WORKER_URL` in `docs/index.html`. Allowed
+Pages serves `docs/` from `main`. The `Deploy Worker` GitHub Action redeploys the Worker
+when `worker/`, `stack_config.json` or `docs/` change (needs the `CLOUDFLARE_API_TOKEN`
+repo secret). Manual deploy: `cd worker && npx wrangler deploy`. Allowed
 browser origins are set by `ALLOWED_ORIGINS` in `worker/wrangler.toml`.
 
 ## Customise
 
 - Technologies and clarifying questions: edit `stack_config.json` (used by both the
-  Python app and the Worker).
+  Python app and the Worker), then check with
+  `cd worker && TYPESAFE_API_KEY=... npm run eval` against `wrangler dev`.

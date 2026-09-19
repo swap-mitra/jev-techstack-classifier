@@ -1,6 +1,11 @@
 name = "jev-techstack-classifier"
 main = "src/index.ts"
 compatibility_date = "2026-09-01"
+account_id = "521c8b030d4137c3b8a6cc1e7663c674"
+
+# The Worker also serves the page, so `npx wrangler dev` runs the whole app locally.
+[assets]
+directory = "../docs"
 
 [vars]
 # Origins allowed to call the Worker from a browser (comma-separated).

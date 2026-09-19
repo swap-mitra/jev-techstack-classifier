@@ -77,27 +77,6 @@
     gap: 12px;
   }
 
-  .status-beacon {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 3px 8px;
-    background: var(--telemetry-green-bg);
-    border: 1px solid var(--telemetry-green-border);
-    border-radius: 4px;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--telemetry-green);
-    letter-spacing: 0.05em;
-  }
-  .beacon-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--telemetry-green);
-    box-shadow: 0 0 6px var(--telemetry-green);
-  }
-
   .hud-title {
     font-size: 13px;
     font-weight: 700;
@@ -856,7 +835,8 @@
   .key-bar a { color: var(--text-accent); }
 
   @media (max-width: 768px) {
-    .hud-stats { display: none; }
+    .hud-stat-item { display: none; }
+    .col-info { min-width: 0; }
     .col-bar { width: 120px; }
     .tech-desc { display: block; margin-top: 2px; }
     .telemetry-dock { flex-direction: column; gap: 4px; padding: 6px 12px; font-size: 10px; }
@@ -941,6 +921,8 @@
 
   <!-- Error Banner -->
   <div id="error" class="error-banner" style="display: none;"></div>
+
+  <div id="warnings"></div>
 
   <!-- Clarification Diagnostics -->
   <div id="clarify" style="display: none;"></div>
@@ -1147,6 +1129,14 @@ $("req").addEventListener("keydown", (e) => {
 });
 $("go").addEventListener("click", runClassification);
 
+// Shared link: fill the prompt from #q=..., and run it if a key is already saved
+const sharedPrompt = new URLSearchParams(location.hash.slice(1)).get("q");
+if (sharedPrompt) {
+  $("req").value = sharedPrompt;
+  updateCharCount();
+  if ($("api-key").value.trim()) runClassification();
+}
+
 // Execution
 async function runClassification() {
   const requirements = $("req").value.trim();
@@ -1176,6 +1166,7 @@ async function runClassification() {
     data._clientMs = clientMs;
     latestData = data;
 
+    history.replaceState(null, "", "#q=" + encodeURIComponent(requirements));
     renderResults(data);
   } catch (err) {
     $("error").textContent = `EVALUATION ERROR: ${err.message}`;
@@ -1212,6 +1203,10 @@ function renderResults(data) {
   if (placeholder) placeholder.style.display = "none";
 
   const descMap = data.descriptions;
+
+  // Stack clashes flagged by the Worker
+  $("warnings").innerHTML = (data.warnings || []).map(w =>
+    `<div class="clarify-box"><div class="clarify-header mono">STACK CLASH</div><div class="clarify-question">${esc(w)}</div></div>`).join("");
 
   // Clarifications
   const clarifyContainer = $("clarify");
