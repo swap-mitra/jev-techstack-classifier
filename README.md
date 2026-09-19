@@ -28,22 +28,7 @@ own and stores nothing.
 cd worker && npm install && npx wrangler dev   # http://localhost:8787, page + API
 ```
 
-Paste your key into the page. Python alternative:
-
-```sh
-pip install -r requirements.txt
-echo TYPESAFE_API_KEY=your-key > .env
-python app.py   # http://localhost:8000, serves docs/index.html plus the same API
-```
-
-Locally the server falls back to `TYPESAFE_API_KEY` when the page sends no key.
-
-CLI:
-
-```sh
-python stack.py "Internal HR leave tracker for 50 employees"
-python stack.py --demo   # live self-check against the API
-```
+Paste your key into the page.
 
 ## Deploy
 
@@ -54,6 +39,5 @@ browser origins are set by `ALLOWED_ORIGINS` in `worker/wrangler.toml`.
 
 ## Customise
 
-- Technologies and clarifying questions: edit `stack_config.json` (used by both the
-  Python app and the Worker), then check with
+- Technologies and clarifying questions: edit `stack_config.json`, then check with
   `cd worker && TYPESAFE_API_KEY=... npm run eval` against `wrangler dev`.
