@@ -5,6 +5,7 @@ Usage: python stack.py "requirements text"   (or pipe text on stdin)
 Needs TYPESAFE_API_KEY in the environment.
 """
 
+import json
 import os
 import sys
 from pathlib import Path
@@ -19,77 +20,17 @@ if _env.exists():
             k, v = line.split("=", 1)
             os.environ.setdefault(k.strip(), v.strip())
 
-LAYERS = {
-    "frontend": {
-        "react": "React / Next.js SPA or SSR web app",
-        "vue": "Vue / Nuxt web app",
-        "angular": "Angular enterprise web app",
-        "svelte": "Svelte / SvelteKit lightweight web app",
-        "server_rendered": "Server-rendered HTML templates (Django, Rails, Laravel views)",
-        "none": "No web frontend needed (API-only, CLI, batch job, or mobile-only)",
-    },
-    "backend": {
-        "node": "Node.js / TypeScript (Express, NestJS), good for real-time and JS teams",
-        "python": "Python (Django, FastAPI), good for data, ML, and quick CRUD",
-        "java": "Java / Kotlin (Spring Boot), large enterprise, regulated systems",
-        "dotnet": "C# / .NET, Microsoft-centric enterprise",
-        "go": "Go, high-concurrency services and infrastructure",
-        "ruby": "Ruby on Rails, fast MVP CRUD apps",
-        "php": "PHP (Laravel), content sites and cheap hosting",
-        "baas": "Backend-as-a-service (Firebase, Supabase), minimal custom server",
-    },
-    "database": {
-        "postgres": "PostgreSQL, relational data with integrity and reporting",
-        "mysql": "MySQL / MariaDB, relational, common web apps",
-        "mongodb": "MongoDB, flexible document data",
-        "dynamodb": "DynamoDB / Cassandra, massive-scale key-value workloads",
-        "redis": "Redis as primary store, ephemeral or very low-latency data",
-        "timeseries": "Time-series DB (TimescaleDB, InfluxDB), metrics, IoT, sensor data",
-        "sqlite": "SQLite, embedded, single-user or offline apps",
-        "warehouse": "Data warehouse (BigQuery, Snowflake), analytics over large datasets",
-    },
-    "hosting": {
-        "aws": "AWS, broad services, enterprise scale",
-        "azure": "Azure, Microsoft ecosystem and enterprise compliance",
-        "gcp": "Google Cloud, data and ML workloads",
-        "paas": "PaaS (Vercel, Heroku, Render), small teams wanting zero ops",
-        "on_prem": "On-premises / private data center, strict data residency or air-gapped",
-    },
-    "mobile": {
-        "none": "No mobile app needed",
-        "react_native": "React Native cross-platform app",
-        "flutter": "Flutter cross-platform app",
-        "native": "Native Swift (iOS) and Kotlin (Android) apps",
-        "pwa": "Progressive web app instead of store apps",
-    },
-}
+# Options and clarifying questions live in JSON so the Cloudflare Worker uses the same list.
+_config = json.loads(Path(__file__).with_name("stack_config.json").read_text(encoding="utf-8"))
+LAYERS: dict[str, dict[str, str]] = _config["layers"]
 
 LOW_CONFIDENCE = 0.3  # docs' example threshold, not validated on this domain
 
 # Jev can't write questions, so clarifications are canned: a Noul checks whether the
-# requirements already cover the topic, and the UI asks only about uncovered ones.
-# Thresholds: ask when the "covered" probability is below it. Tuned on 15 hand-labelled
-# prompts (all separated cleanly); retune on real traffic.
-CLARIFY = {
-    "platform": {
-        "check": "Can you tell what kind of product this is: a website or web app (including portals, storefronts, dashboards), a phone app, a desktop app, or a backend API? Answer yes if the product type is stated or clearly implied; answer no if it just says 'app', 'software', 'tool' or 'platform' without saying where it runs.",
-        "threshold": 0.7,
-        "ask": "Where will people use it?",
-        "options": ["Web browser", "iOS and Android apps", "Web and mobile", "Desktop", "API only, no UI"],
-    },
-    "scale": {
-        "check": "Do the requirements indicate the expected number of users or traffic volume?",
-        "threshold": 0.5,
-        "ask": "How many users?",
-        "options": ["Under 100 internal users", "Thousands of users", "Millions of users"],
-    },
-    "data": {
-        "check": "Can you infer the main kind of data this software would store, such as orders, bookings, user profiles, patient or business records, posts and photos, sensor readings, or analytics events? Answer no only if the purpose is too vague to guess the data.",
-        "threshold": 0.7,
-        "ask": "What data does it mainly store?",
-        "options": ["Structured business records", "Flexible documents", "Time-series or sensor data", "Large analytics datasets"],
-    },
-}
+# requirements already cover the topic, and the UI asks only about uncovered ones when the
+# "covered" probability is below that entry's threshold. Thresholds were tuned on 15
+# hand-labelled prompts (all separated cleanly); retune on real traffic.
+CLARIFY: dict[str, dict] = _config["clarify"]
 
 
 def recommend(requirements: str, api_key: str | None = None) -> dict:
